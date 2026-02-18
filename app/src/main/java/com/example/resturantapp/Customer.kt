@@ -19,7 +19,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,9 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.resturantapp.roomdbcustomer.CustomerDao
 import com.example.resturantapp.roomdbcustomer.CustomerDatabase
-import com.example.resturantapp.roomdbcustomer.FoodDao
+import com.example.resturantapp.roomdbcustomer.CustomerEntity
+import kotlinx.coroutines.launch
 
 class Customer : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +59,8 @@ fun CustomerScreen() {
     val customerDao = database?.customerDao()
 
     val customers = customerDao?.getCustomer()?.collectAsState(initial = emptyList())
+
+    var selectedCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
 
 
     Box(Modifier.fillMaxSize()){
@@ -87,8 +88,18 @@ fun CustomerScreen() {
                                 .padding(20.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = customer.name.toString())
-                            Text(text = customer.contact.toString())
+                            CustomerIcons(
+                                customer =customer,
+                                onDelete = {
+                                    scope.launch {
+                                        customerDao?.deleteCustomer(customer)
+                                    }
+                                },
+                                onEdit = {
+                                    selectedCustomer = customer
+                                    showDialog = true
+                                }
+                            )
                         }
 
                     }
@@ -109,12 +120,14 @@ fun CustomerScreen() {
         }
     }
 
-    if (showDialog) {
-        CustomerDialog(
-            showDialog = showDialog,
-            dismiss = {showDialog = false},
-            customerDao = customerDao
-        )
-    }
+    CustomerDialog(
+        showDialog = showDialog,
+        customer = selectedCustomer,
+        dismiss = {
+            showDialog = false
+            selectedCustomer = null
+        },
+        customerDao = customerDao
+    )
 
 }

@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.resturantapp.roomdbcustomer.CustomerEntity
 import com.example.resturantapp.roomdbcustomer.FoodDao
 import com.example.resturantapp.roomdbcustomer.FoodEntity
 import kotlinx.coroutines.Dispatchers
@@ -51,12 +49,13 @@ class FoodDialogBox : ComponentActivity() {
 @Composable
 fun FoodDialog(
     showDialog: Boolean,
+    food : FoodEntity?,
     dismiss: () -> Unit,
     foodDao: FoodDao?
 ) {
 
-    var dish by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
+    var dish by remember { mutableStateOf(food?.dish?: "") }
+    var price by remember { mutableStateOf(food?.price?: "") }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -77,7 +76,10 @@ fun FoodDialog(
 
                     Spacer(Modifier.height(20.dp))
 
-                    Text(text = "Add Item:", fontSize = 25.sp,)
+                    Text(
+                    text= if (food == null) "Add Items:" else "Update Items:",
+                    fontSize = 25.sp
+                    )
 
                     Spacer(Modifier.height(10.dp))
 
@@ -110,20 +112,37 @@ fun FoodDialog(
                                 Toast.makeText(context, "Enter Price", Toast.LENGTH_SHORT).show()
                             }
                             else {
-                                var food = FoodEntity(
-                                    dish = dish,
-                                    price = price
-                                )
-
                                 scope.launch {
-                                    val data = withContext(Dispatchers.IO) {
-                                        foodDao?.addFood(food)
+                                    withContext(Dispatchers.IO) {
+
+                                        if (food == null) {
+                                            // ADD
+                                            foodDao?.addFood(
+                                                FoodEntity(
+                                                    dish = dish,
+                                                    price = price
+                                                )
+                                            )
+                                        } else {
+                                            // UPDATE
+                                            foodDao?.updateFood(
+                                                food.copy(
+                                                    dish = dish,
+                                                    price = price
+                                                )
+                                            )
+                                        }
                                     }
 
                                     dismiss()
-                                    Toast.makeText(context,"Food Item Saved", Toast.LENGTH_SHORT).show()
 
+                                    Toast.makeText(
+                                        context,
+                                        if (food == null) "Food Item Saved" else "Food Item Updated",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
+
                             }
                         },
 

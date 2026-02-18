@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.resturantapp.roomdbcustomer.CustomerDatabase
+import com.example.resturantapp.roomdbcustomer.FoodEntity
+import kotlinx.coroutines.launch
 
 class Food : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +64,9 @@ fun FoodScreen() {
 
     val foods = foodDao?.getFood()?.collectAsState(initial = emptyList())
 
+    var selectedFood by remember { mutableStateOf<FoodEntity?>(null) }
+
+
 
     Box(Modifier.fillMaxSize()){
 
@@ -85,11 +90,22 @@ fun FoodScreen() {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(20.dp),
+                                .padding(10.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = food.dish.toString())
-                            Text(text = food.price.toString())
+                            FoodIcons (
+                                food = food,
+                                onDelete = {
+                                    scope.launch {
+                                        foodDao?.deleteFood(food)
+                                    }
+                                },
+                                onEdit = {
+                                    selectedFood = food
+                                    showDialog = true
+
+                                }
+                            )
                         }
 
                     }
@@ -110,13 +126,16 @@ fun FoodScreen() {
         }
     }
 
-    if (showDialog) {
-        FoodDialog(
-            showDialog = showDialog,
-            dismiss = {showDialog = false},
-            foodDao = foodDao
-        )
-    }
+    FoodDialog(
+        showDialog = showDialog,
+        food = selectedFood,
+        dismiss = {
+            showDialog = false
+            selectedFood = null
+        },
+        foodDao = foodDao
+    )
+
 
 }
 

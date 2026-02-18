@@ -202,10 +202,6 @@ class HomeScreen : ComponentActivity() {
     }
 }
 
-@Composable
-fun BillingScreen() {
-
-}
 
 
 

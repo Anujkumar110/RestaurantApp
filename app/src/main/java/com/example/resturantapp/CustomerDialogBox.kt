@@ -9,7 +9,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,7 +32,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.resturantapp.roomdbcustomer.CustomerDao
 import com.example.resturantapp.roomdbcustomer.CustomerEntity
-import com.example.resturantapp.roomdbcustomer.FoodDao
 import com.example.resturantapp.roomdbcustomer.FoodEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,6 +52,7 @@ class CustomerDialogBox: ComponentActivity() {
 @Composable
 fun CustomerDialog(
     showDialog: Boolean,
+    customer: CustomerEntity?,
     dismiss: () -> Unit,
     customerDao: CustomerDao?
 ) {
@@ -80,7 +79,10 @@ fun CustomerDialog(
 
                     Spacer(Modifier.height(20.dp))
 
-                    Text(text = "Add Customer:", fontSize = 25.sp,)
+                    Text(
+                        text = if (customer == null) "Add Customer:" else "Update Customer:",
+                        fontSize = 25.sp
+                    )
 
                     Spacer(Modifier.height(10.dp))
 
@@ -113,19 +115,33 @@ fun CustomerDialog(
                                 Toast.makeText(context, "Enter Contact", Toast.LENGTH_SHORT).show()
                             }
                             else {
-                                var food = CustomerEntity(
-                                    name = name,
-                                    contact = contact
-                                )
-
                                 scope.launch {
-                                    val data = withContext(Dispatchers.IO) {
-                                        customerDao?.addCustomer(food)
+                                    withContext(Dispatchers.IO) {
+
+                                        if (customer == null) {
+                                            customerDao?.addCustomer(
+                                                CustomerEntity(
+                                                    name = name,
+                                                    contact = contact
+                                                )
+                                            )
+                                        } else {
+                                            customerDao?.updateCustomer(
+                                                customer.copy(
+                                                    name = name,
+                                                    contact = contact
+                                                )
+                                            )
+                                        }
                                     }
 
                                     dismiss()
-                                    Toast.makeText(context,"Customer Detail Saved", Toast.LENGTH_SHORT).show()
 
+                                    Toast.makeText(
+                                        context,
+                                        if (customer == null) "Customer Saved" else "Customer Updated",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                         },
