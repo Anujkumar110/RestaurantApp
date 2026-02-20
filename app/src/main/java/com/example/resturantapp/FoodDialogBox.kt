@@ -59,6 +59,12 @@ fun FoodDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+
+    if(food!=null){
+        dish = food.dish.toString()
+        price = food.price.toString()
+    }
+
     if (showDialog) {
         Dialog(
             properties = DialogProperties(

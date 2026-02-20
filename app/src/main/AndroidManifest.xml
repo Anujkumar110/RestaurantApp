@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ResturantApp">
         <activity
+            android:name=".BillingPopUp"
+            android:exported="false" />
+        <activity
             android:name=".CustomerIconsEdits"
             android:exported="false" />
         <activity

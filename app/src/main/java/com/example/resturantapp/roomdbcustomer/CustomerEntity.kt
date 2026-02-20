@@ -1,6 +1,8 @@
 package com.example.resturantapp.roomdbcustomer
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 
@@ -19,4 +21,26 @@ data class FoodEntity(
     var id: Long = 0L,
     var dish : String? = null,
     var price : String? = null
+)
+
+
+@Entity(
+    tableName = "bill_table",
+    foreignKeys = [
+        ForeignKey(
+            entity = CustomerEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["customerId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("customerId")]
+)
+data class BillEntity(
+
+    @PrimaryKey(autoGenerate = true)
+    val billId: Int = 0,
+
+    val customerId: Int,
+    val totalAmount: Double
 )

@@ -131,7 +131,6 @@ fun FoodScreen() {
         food = selectedFood,
         dismiss = {
             showDialog = false
-            selectedFood = null
         },
         foodDao = foodDao
     )

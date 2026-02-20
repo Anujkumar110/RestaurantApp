@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -189,7 +190,10 @@ class HomeScreen : ComponentActivity() {
             )
             {
                 composable("bill") {
-                    BillingScreen()
+                    BillingScreen(navController)
+                }
+                composable("billingPopUp") {
+                    BillingPopUpScreen(navController)
                 }
                 composable("customer") {
                     CustomerScreen()

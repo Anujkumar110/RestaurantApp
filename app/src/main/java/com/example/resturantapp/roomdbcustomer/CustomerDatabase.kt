@@ -7,14 +7,16 @@ import androidx.room.RoomDatabase
 
 
 @Database(
-    entities = [CustomerEntity::class, FoodEntity::class],
-    version = 2,
+    entities = [CustomerEntity::class, FoodEntity::class, BillEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class CustomerDatabase : RoomDatabase() {
 
     abstract fun customerDao(): CustomerDao
     abstract fun foodDao(): FoodDao
+    abstract fun billDao(): BillDao
+
 
     companion object {
 

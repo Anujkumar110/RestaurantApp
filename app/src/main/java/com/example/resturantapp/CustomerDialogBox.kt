@@ -62,6 +62,11 @@ fun CustomerDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    if(customer!=null){
+        name = customer.name.toString()
+        contact = customer.contact.toString()
+    }
+
     if (showDialog) {
         Dialog(
             properties = DialogProperties(

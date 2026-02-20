@@ -110,6 +110,8 @@ fun CustomerScreen() {
         FloatingActionButton(
             onClick = {
                 showDialog = true
+                selectedCustomer?.contact = ""
+                selectedCustomer?.name = ""
             },
             modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
         ) {
@@ -125,7 +127,6 @@ fun CustomerScreen() {
         customer = selectedCustomer,
         dismiss = {
             showDialog = false
-            selectedCustomer = null
         },
         customerDao = customerDao
     )

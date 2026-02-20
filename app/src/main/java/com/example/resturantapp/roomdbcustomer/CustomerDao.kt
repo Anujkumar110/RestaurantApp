@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -40,3 +41,15 @@ interface FoodDao {
     @Query("select * from food_table")
     fun getFood() : Flow<List<FoodEntity>>
 }
+
+@Dao
+interface BillDao {
+
+    @Insert
+    suspend fun insertBill(bill: BillEntity)
+
+    @Query("SELECT * FROM bill_table")
+    fun getAllBills(): Flow<List<BillEntity>>
+}
+
+
