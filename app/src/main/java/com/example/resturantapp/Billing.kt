@@ -17,13 +17,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.resturantapp.roomdbcustomer.CustomerDatabase
-
 
 class Billing : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,19 +36,82 @@ class Billing : ComponentActivity() {
     }
 }
 
+
+
+
+//@Composable
+//fun BillingScreen(navController: NavController, billId: Int) {
+//
+//    val context = LocalContext.current
+//    val database = CustomerDatabase.getInstance(context)
+//    val billDao = database?.billDao()
+//
+//    val billState = billDao
+//        ?.getBillWithItems(billId)
+//        ?.collectAsState(initial = null)
+//
+//    val billData = billState?.value
+//
+//    billData?.let { data ->
+//
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(16.dp)
+//        ) {
+//
+//            Text(
+//                "Order ID: ${data.bill.billId}",
+//                style = MaterialTheme.typography.titleLarge
+//            )
+//
+//            Spacer(modifier = Modifier.height(10.dp))
+//
+//            Text("Ordered By: ${data.customer.name}")
+//
+//            Spacer(modifier = Modifier.height(15.dp))
+//
+//            Text("Items:")
+//
+//            data.items.forEach { item ->
+//                Text("${item.food.dish} - ₹${item.billItem.price}")
+//            }
+//
+//            Spacer(modifier = Modifier.height(15.dp))
+//
+//            Text(
+//                "Total: ₹${data.bill.totalAmount}",
+//                style = MaterialTheme.typography.titleMedium
+//            )
+//        }
+//    }
+//
+//    Box(modifier = Modifier.fillMaxSize()) {
+//        FloatingActionButton(
+//            onClick = {
+//                navController.navigate("billingPopUp")
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(10.dp)
+//        ) {
+//            Icon(Icons.Default.Add, contentDescription = "")
+//        }
+//    }
+//}
+
 @Composable
 fun BillingScreen(navController: NavController, billId: Int) {
 
     val context = LocalContext.current
     val database = CustomerDatabase.getInstance(context)
+    val billDao = database.billDao()
 
-    val billDao = database?.billDao()
+    val billData by billDao
+        .getBillWithItems(billId)
+        .collectAsState(initial = null)
 
-    val billWithItems by billDao
-        ?.getBillWithItems(billId)
-        ?.collectAsState(initial = null)
-
-    billWithItems?.let { data ->
+    billData?.let { data ->
 
         Column(
             modifier = Modifier
@@ -55,44 +119,44 @@ fun BillingScreen(navController: NavController, billId: Int) {
                 .padding(16.dp)
         ) {
 
-            Text("Order ID: ${data.bill.billId}",
-                style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Order ID: ${data.bill.billId}",
+                style = MaterialTheme.typography.titleLarge
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Text("Ordered By: ${data.customer.name}")
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
             Text("Items:")
 
             data.items.forEach { item ->
-
-                Text(
-                    "${item.food.dish} - ₹${item.billItem.price}"
-                )
+                Text("${item.food.dish} - ₹${item.billItem.price}")
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
-            Text("Total: ₹${data.bill.totalAmount}",
-                style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Total: ₹${data.bill.totalAmount}",
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-
         FloatingActionButton(
             onClick = {
-                navController.navigate("billingPopUp")
+                navController.navigate("billList")
             },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp)
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(10.dp)
         ) {
-            Icon(
-                Icons.Default.Add,
-                contentDescription = ""
-            )
+            Icon(Icons.Default.Add, contentDescription = "")
         }
     }
 }
+
+

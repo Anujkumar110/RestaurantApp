@@ -1,6 +1,5 @@
 package com.example.resturantapp
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -8,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -15,11 +15,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.resturantapp.roomdbcustomer.BillEntity
+import com.example.resturantapp.roomdbcustomer.BillItemEntity
 import com.example.resturantapp.roomdbcustomer.CustomerDatabase
 import com.example.resturantapp.roomdbcustomer.CustomerEntity
 import com.example.resturantapp.roomdbcustomer.FoodEntity
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,16 +30,18 @@ fun BillingPopUpScreen(navController: NavController) {
     val context = LocalContext.current
     val database = CustomerDatabase.getInstance(context)
 
-    val customerDao = database?.customerDao()
-    val foodDao = database?.foodDao()
+    val scope = rememberCoroutineScope()
+
+    val customerDao = database.customerDao()
+    val foodDao = database.foodDao()
 
     val customers = customerDao
-        ?.getCustomer()
-        ?.collectAsState(initial = emptyList())
+        .getCustomer()
+        .collectAsState(initial = emptyList())
 
     val foods = foodDao
-        ?.getFood()
-        ?.collectAsState(initial = emptyList())
+        .getFood()
+        .collectAsState(initial = emptyList())
 
     var expandedCustomer by remember { mutableStateOf(false) }
     var selectedCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
@@ -48,7 +52,6 @@ fun BillingPopUpScreen(navController: NavController) {
 
     val selectedFoodList = remember { mutableStateListOf<FoodEntity>() }
 
-    // ✅ TOTAL CALCULATION
     val totalAmount = selectedFoodList.sumOf { it.price?.toDouble() ?: 0.0 }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -59,7 +62,7 @@ fun BillingPopUpScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
 
-            // ---------------- CUSTOMER DROPDOWN ----------------
+            // ================= CUSTOMER DROPDOWN =================
 
             ExposedDropdownMenuBox(
                 expanded = expandedCustomer,
@@ -81,7 +84,7 @@ fun BillingPopUpScreen(navController: NavController) {
                     onDismissRequest = { expandedCustomer = false }
                 ) {
 
-                    customers?.value?.forEach { customer ->
+                    customers.value.forEach { customer ->
                         DropdownMenuItem(
                             text = { Text(customer.name ?: "") },
                             onClick = {
@@ -94,30 +97,6 @@ fun BillingPopUpScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(15.dp))
-
-            // ---------------- SELECTED CUSTOMER ----------------
-//
-//            selectedCustomer?.let { customer ->
-//
-//                Text("Selected Customer")
-//
-//                Card(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(6.dp)
-//                ) {
-//                    Column(
-//                        modifier = Modifier.padding(12.dp)
-//                    ) {
-//                        Text("Name: ${customer.name}")
-//                        Text("Contact: ${customer.contact}")
-//                    }
-//                }
-//            }
-//
-//            Spacer(modifier = Modifier.height(20.dp))
-
-            // ---------------- FOOD LIST ----------------
 
             Text("Selected Food Items")
 
@@ -142,8 +121,6 @@ fun BillingPopUpScreen(navController: NavController) {
                 }
             }
 
-            // ---------------- TOTAL CART VALUE ----------------
-
             Text(
                 text = "Total Cart Value: ₹$totalAmount",
                 style = MaterialTheme.typography.titleMedium,
@@ -152,57 +129,76 @@ fun BillingPopUpScreen(navController: NavController) {
                     .padding(vertical = 10.dp)
             )
 
-            // ---------------- ADD TO CART BUTTON ----------------
+            // ================= ADD TO CART BUTTON =================
 
             Button(
                 onClick = {
 
-                    val billDao = database?.billDao()
-
                     val customer = selectedCustomer
                     val foodList = selectedFoodList
 
-                    if (customer != null && foodList.isNotEmpty()) {
+                    if (customer?.id != null && foodList.isNotEmpty()) {
 
-                        val bill = BillEntity(
-                            customerName = customer.name ?: "",
-                            customerContact = customer.contact ?: "",
-                            totalAmount = totalAmount
-                        )
+                        val billDao = database.billDao()
+                        val billItemDao = database.billItemDao()
 
-                        GlobalScope.launch {
-                            billDao?.insertBill(bill)
-                        }
+                        val total = foodList.sumOf { it.price?.toDouble() ?: 0.0 }
 
-                        navController.navigate("bill") {
-                            popUpTo("billingPopUp") {
-                                inclusive = true
+                        scope.launch {
+
+                            // Insert Bill
+                            val billIdLong = withContext(Dispatchers.IO) {
+                                billDao.insertBill(
+                                    BillEntity(
+                                        customerId = customer.id,
+                                        totalAmount = total
+                                    )
+                                )
                             }
+
+                            val billIdInt = billIdLong.toInt()
+
+                            // Insert Bill Items
+                            withContext(Dispatchers.IO) {
+                                foodList.forEach { food ->
+                                    if (food.id != null) {
+                                        billItemDao.insertBillItem(
+                                            BillItemEntity(
+                                                billId = billIdInt,
+                                                foodId = food.id,
+                                                quantity = 1,
+                                                price = food.price?.toDouble() ?: 0.0
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Navigate safely on Main thread
+                            navController.navigate("bill")
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Add To Cart")
-                    
+                Text("Add To Order")
             }
         }
 
-        // ---------------- FLOATING ACTION BUTTON ----------------
+        // ================= FLOATING BUTTON =================
 
         FloatingActionButton(
-            onClick = {
-                showFoodDialog = true
-            },
+            onClick = { showFoodDialog = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 60.dp).padding(15.dp)
+                .padding(bottom = 60.dp)
+                .padding(15.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "")
         }
     }
 
-    // ---------------- FOOD SELECTION DIALOG ----------------
+    // ================= FOOD DIALOG =================
 
     if (showFoodDialog) {
 
@@ -243,8 +239,7 @@ fun BillingPopUpScreen(navController: NavController) {
                             onDismissRequest = { expandedFood = false }
                         ) {
 
-                            foods?.value?.forEach { food ->
-
+                            foods.value.forEach { food ->
                                 DropdownMenuItem(
                                     text = {
                                         Text("${food.dish} - ₹${food.price}")

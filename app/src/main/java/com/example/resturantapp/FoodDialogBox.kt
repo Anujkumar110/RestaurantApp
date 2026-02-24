@@ -1,31 +1,19 @@
 package com.example.resturantapp
 
-import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -36,130 +24,128 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class FoodDialogBox : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-
-        }
-    }
-}
-
 @Composable
 fun FoodDialog(
     showDialog: Boolean,
-    food : FoodEntity?,
+    food: FoodEntity?,
     dismiss: () -> Unit,
     foodDao: FoodDao?
 ) {
 
-    var dish by remember { mutableStateOf(food?.dish?: "") }
-    var price by remember { mutableStateOf(food?.price?: "") }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
-    if(food!=null){
-        dish = food.dish.toString()
-        price = food.price.toString()
-    }
+    var dish by remember { mutableStateOf(food?.dish ?: "") }
+    var price by remember { mutableStateOf(food?.price?.toString() ?: "") }
 
     if (showDialog) {
+
         Dialog(
-            properties = DialogProperties(
-                dismissOnClickOutside = true
-            ),
-            onDismissRequest = dismiss,
+            properties = DialogProperties(dismissOnClickOutside = true),
+            onDismissRequest = dismiss
+        ) {
 
-            content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .background(Color.White),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(10.dp).background(Color.White),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Spacer(Modifier.height(20.dp))
 
-                    Spacer(Modifier.height(20.dp))
+                Text(
+                    text = if (food == null) "Add Item" else "Update Item",
+                    fontSize = 22.sp
+                )
 
-                    Text(
-                    text= if (food == null) "Add Items:" else "Update Items:",
-                    fontSize = 25.sp
-                    )
+                Spacer(Modifier.height(16.dp))
 
-                    Spacer(Modifier.height(10.dp))
+                TextField(
+                    value = dish,
+                    onValueChange = { dish = it },
+                    singleLine = true,
+                    label = { Text("Dish Name") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                )
 
-                    TextField(
-                        value = dish,
-                        onValueChange = { dish = it },
-                        singleLine = true,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
-                    )
+                Spacer(Modifier.height(12.dp))
 
-                    Spacer(Modifier.height(10.dp))
+                TextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    singleLine = true,
+                    label = { Text("Price") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
+                )
 
-                    TextField(
-                        value = price,
-                        onValueChange = { price = it },
-                        singleLine = true,
-                        maxLines = 1,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
-                    )
+                Spacer(Modifier.height(20.dp))
 
-                    Spacer(Modifier.height(20.dp))
+                ElevatedButton(
+                    onClick = {
 
-                    ElevatedButton(
-                        onClick = {
-                            if (dish.isEmpty()) {
-                                Toast.makeText(context, "Enter Dish", Toast.LENGTH_SHORT).show()
-                            }
-                            else if (price.isEmpty()) {
-                                Toast.makeText(context, "Enter Price", Toast.LENGTH_SHORT).show()
-                            }
-                            else {
-                                scope.launch {
-                                    withContext(Dispatchers.IO) {
+                        if (dish.isBlank()) {
+                            Toast.makeText(context, "Enter Dish Name", Toast.LENGTH_SHORT).show()
+                            return@ElevatedButton
+                        }
 
-                                        if (food == null) {
-                                            // ADD
-                                            foodDao?.addFood(
-                                                FoodEntity(
-                                                    dish = dish,
-                                                    price = price
-                                                )
-                                            )
-                                        } else {
-                                            // UPDATE
-                                            foodDao?.updateFood(
-                                                food.copy(
-                                                    dish = dish,
-                                                    price = price
-                                                )
-                                            )
-                                        }
-                                    }
+                        val priceValue = price.toDoubleOrNull()
 
-                                    dismiss()
+                        if (priceValue == null) {
+                            Toast.makeText(context, "Enter Valid Price", Toast.LENGTH_SHORT).show()
+                            return@ElevatedButton
+                        }
 
-                                    Toast.makeText(
-                                        context,
-                                        if (food == null) "Food Item Saved" else "Food Item Updated",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+
+                                if (food == null) {
+                                    // ADD
+                                    foodDao?.addFood(
+                                        FoodEntity(
+                                            dish = dish,
+                                            price = priceValue
+                                        )
+                                    )
+                                } else {
+                                    // UPDATE
+                                    foodDao?.updateFood(
+                                        food.copy(
+                                            dish = dish,
+                                            price = priceValue
+                                        )
+                                    )
                                 }
-
                             }
-                        },
 
-                        modifier = Modifier.fillMaxWidth().padding(10.dp),
-                        shape = RoundedCornerShape(7.dp)
-                    )
-                    {
-                        Text("Save")
-                    }
+                            dismiss()
+
+                            Toast.makeText(
+                                context,
+                                if (food == null) "Food Saved" else "Food Updated",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Save")
                 }
+
+                Spacer(Modifier.height(20.dp))
             }
-        )
+        }
     }
 }

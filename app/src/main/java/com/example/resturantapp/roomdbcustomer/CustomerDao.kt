@@ -1,55 +1,69 @@
 package com.example.resturantapp.roomdbcustomer
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Transaction
-import androidx.room.Update
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
+// -------------------- CUSTOMER DAO --------------------
 
 @Dao
 interface CustomerDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addCustomer(customerEntity: CustomerEntity)
 
     @Update
-    suspend fun updateCustomer (customerEntity: CustomerEntity)
+    suspend fun updateCustomer(customerEntity: CustomerEntity)
 
     @Delete
-    suspend fun deleteCustomer (customerEntity: CustomerEntity)
+    suspend fun deleteCustomer(customerEntity: CustomerEntity)
 
-    @Query("select * from customer_table")
-    fun getCustomer() : Flow<List<CustomerEntity>>
-
+    @Query("SELECT * FROM customer_table")
+    fun getCustomer(): Flow<List<CustomerEntity>>
 }
+
+
+// -------------------- FOOD DAO --------------------
 
 @Dao
 interface FoodDao {
 
-    @Insert
-    suspend fun addFood (foodEntity: FoodEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addFood(foodEntity: FoodEntity)
 
     @Update
-    suspend fun updateFood (foodEntity: FoodEntity)
+    suspend fun updateFood(foodEntity: FoodEntity)
 
     @Delete
-    suspend fun deleteFood (foodEntity: FoodEntity)
+    suspend fun deleteFood(foodEntity: FoodEntity)
 
-    @Query("select * from food_table")
-    fun getFood() : Flow<List<FoodEntity>>
+    @Query("SELECT * FROM food_table")
+    fun getFood(): Flow<List<FoodEntity>>
 }
+
+
+// -------------------- BILL DAO --------------------
 
 @Dao
 interface BillDao {
 
     @Insert
-    suspend fun insertBill(bill: BillEntity)
+    suspend fun insertBill(bill: BillEntity): Long
 
+    @Transaction
     @Query("SELECT * FROM bill_table")
-    fun getAllBills(): Flow<List<BillEntity>>
+    fun getAllBillsWithCustomer(): Flow<List<BillWithCustomer>>
+
+    @Transaction
+    @Query("SELECT * FROM bill_table WHERE billId = :billId")
+    fun getBillWithItems(billId: Int): Flow<BillWithItems>
 }
 
 
+// -------------------- BILL ITEM DAO --------------------
+
+@Dao
+interface BillItemDao {
+
+    @Insert
+    suspend fun insertBillItem(item: BillItemEntity)
+}
